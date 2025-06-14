@@ -1,5 +1,10 @@
+import BrowseHeader from "./BrowseHearder";
 const Browse = () => {
-    return <div>Browse Page</div>;
+    return (
+    <div>
+        <BrowseHeader></BrowseHeader>
+    </div>
+    );
 };
 
 export default Browse;

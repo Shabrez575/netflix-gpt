@@ -1,7 +1,7 @@
 import Header from "./Header";
 import TrendingNow from "./TrendingNow";
 
-const Login = () => {
+const LandingPage = () => {
     return (
         <div className="relative h-screen w-full">
             <Header />
@@ -15,7 +15,7 @@ const Login = () => {
                 />
 
                 {/* Overlay Content */}
-                <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-60 flex flex-col justify-center items-center text-white px-6 text-center">
+                <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-65 flex flex-col justify-center items-center text-white px-6 text-center">
                     <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4">
                         Unlimited movies, TV <br/>shows and more
                     </h1>
@@ -53,4 +53,4 @@ const Login = () => {
     );
 };
 
-export default Login;
+export default LandingPage;

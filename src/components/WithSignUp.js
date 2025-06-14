@@ -1,6 +1,93 @@
-import React from "react";
+import React, { useRef } from "react";
+import { useState } from "react";
+import { checkValidDateSignIn, checkValidDateSignUp } from "../utils/validate";
+import {createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import {signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../utils/firebase";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { addUser } from "../utils/userSlice";
 
-const LoginPage = () => {
+
+const WithSignUp = () => {
+
+  const [isSignInForm, setIsSignInForm] = useState(true);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const email = useRef(null);
+  const password = useRef(null);
+  const name  = useRef(null);
+
+  const toggleSignInForm = () => {
+    setIsSignInForm(!isSignInForm);
+  };
+
+   const handleButtonClick = () => {
+    const emailValue = email.current.value;
+    const passwordValue = password.current.value;
+    const nameValue = isSignInForm ? null : name.current?.value;
+
+    console.log("Email entered:", emailValue);
+    console.log("Password entered:", passwordValue);
+    console.log("Name entered:",nameValue);
+
+    const message = isSignInForm
+    ? checkValidDateSignIn(emailValue, passwordValue)
+    : checkValidDateSignUp(emailValue, passwordValue, nameValue);
+
+    setErrorMessage(message);
+
+    // If validation failed
+    if(message !== null) return;
+
+    // Otherwise run signin/signup authentication logic 
+    if(!isSignInForm){
+        // Sign up logic
+        createUserWithEmailAndPassword(auth, emailValue, passwordValue)
+         .then((userCredential) => {
+        // Signed up 
+        const user = userCredential.user;
+        updateProfile(user, {
+          displayName: name.current.value, 
+          photoURL: "https://avatars.githubusercontent.com/u/77329187?v=4"
+        }).then(() => {
+          const {uid, email, displayName, photoURL} = auth.currentUser;
+          dispatch(addUser({uid: uid, email: email, displayName: displayName, photoURL:photoURL}));
+          
+          navigate("/Browse");
+        })
+        .catch((error) => {
+          setErrorMessage(error.message);
+        });
+        console.log(user);
+        navigate('/Browse');
+
+        }).catch((error) => {
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            setErrorMessage(errorCode + "-" + errorMessage);
+        });
+    }
+    else{
+        // Sign In logic
+        signInWithEmailAndPassword(auth, emailValue, passwordValue).then((userCredential) => {
+        // Signed in 
+           const user = userCredential.user;
+           console.log(user);
+           navigate('/Browse');
+
+        }).catch((error) => {
+           const errorCode = error.code;
+           const errorMessage = error.message;
+           setErrorMessage(errorCode + "-" + errorMessage);
+    });
+
+   }
+  };
+  
+
   return (
     <div className="relative min-h-screen text-white">
       {/* Background image */}
@@ -26,20 +113,33 @@ const LoginPage = () => {
 
       {/* Login form */}
       <div className="flex justify-center items-center py-32 sm:py-40 px-4">
-        <form className="w-9/12 sm:w-6/12 md:w-7/12 lg:w-4/12 xl:w-4/12 p-6 sm:p-12 bg-black bg-opacity-80 rounded-lg shadow-lg z-20">
-          <h2 className="mb-8 font-bold text-3xl">Sign In</h2>
+        <form onSubmit={(e) => e.preventDefault()} className="w-9/12 sm:w-8/12 md:w-7/12 lg:w-4/12 xl:w-4/12 p-6 sm:p-12 bg-black bg-opacity-80 rounded-lg shadow-lg z-20">
+          <h2 className="mb-8 font-bold text-3xl">{isSignInForm ? "Sign In" : "Sign Up"}</h2>
+          {!isSignInForm && (
+             <input
+             ref={name}
+             type="text"
+             placeholder="Full name"
+             className="p-3 mb-4 w-full rounded bg-black border border-gray-500 text-white placeholder-gray-500"
+           />
+          )}
+
           <input
+            ref={email}
             type="email"
             placeholder="Email or Mobile number"
             className="p-3 mb-4 w-full rounded bg-black border border-gray-500 text-white placeholder-gray-500"
           />
           <input
+            ref={password}
             type="password"
             placeholder="Password"
             className="p-3 mb-4 w-full rounded bg-black border border-gray-500 text-white placeholder-gray-500"
           />
-          <button className="p-3 mb-4 w-full bg-red-600 rounded font-semibold hover:bg-red-700 transition text-white">
-            Sign In
+          <p className="text-red-700 py-2 font-bold">{errorMessage}</p>
+          <button className="p-3 mb-4 w-full bg-red-600 rounded font-semibold hover:bg-red-700 transition text-white" 
+            onClick={handleButtonClick}>
+           {isSignInForm ? "Sign In" : "Sign Up"}
           </button>
           <p className="text-center mb-4">OR</p>
           <button className="p-3 mb-4 w-full bg-gray-600 rounded font-semibold hover:bg-gray-700 transition text-white bg-opacity-60">
@@ -55,11 +155,9 @@ const LoginPage = () => {
             </a>
           </div>
           <div className="text-gray-400 text-sm">
-            <p className="mb-2">
-              New to Netflix?{" "}
-              <a href="/" className="text-white hover:underline">
-                Sign up now.
-              </a>
+            <p className="mb-2 text-white hover:underline cursor-pointer" onClick={toggleSignInForm}>
+                {isSignInForm ? " New to Netflix? Sign up now" : "Already registered? Sign In"}
+             
             </p>
             <p className="text-xs">
               This page is protected by Google reCAPTCHA to ensure you're not a
@@ -119,4 +217,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default WithSignUp;
